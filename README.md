@@ -1,39 +1,39 @@
 # Audit Log PoC — PostgreSQL Partitioning + JSONB
 
-Research project: high-performance audit log system on PostgreSQL 16.
+Research project: a high-performance audit log system on PostgreSQL 16.
 
-## Quick start (từ máy trắng)
+## Quick Start (from a clean machine)
 
-### Cách 1: Docker (Khuyến nghị)
+### Option 1: Docker (Recommended)
 
 ```bash
 # 1. Clone repository
 git clone <repo-url>
 cd csdl
 
-# 2. Copy và chỉnh sửa cấu hình (tùy chọn)
+# 2. Copy and edit the configuration (optional)
 cp .env.example .env
-# Chỉnh sửa .env theo nhu cầu
+# Adjust .env as needed
 
-# 3. Khởi động PostgreSQL qua Docker
+# 3. Start PostgreSQL via Docker
 docker-compose up -d
 
-# 4. Chạy benchmark
+# 4. Run the benchmark
 bash bench/run_baseline.sh
 bash bench/run_proposed.sh
 
-# 5. Xem kết quả performance
+# 5. View performance results
 bash bench/analyze_performance.sh
 ```
 
-### Cách 2: Local PostgreSQL
+### Option 2: Local PostgreSQL
 
 ```bash
 # 1. Prerequisites
-#    PostgreSQL 16, psql, pgbench — đã có sẵn trên Ubuntu 22.04 WSL2
+#    PostgreSQL 16, psql, pgbench — available on Ubuntu 22.04 WSL2
 
-# 2. Bootstrap database (run as superuser)
-#    Roles phải tồn tại TRƯỚC khi tạo database với OWNER db_admin
+# 2. Bootstrap the database (run as superuser)
+#    Roles must exist BEFORE creating the database with OWNER db_admin
 psql "postgresql://postgres:postgres@localhost/postgres" -f sql/00_roles.sql
 psql "postgresql://postgres:postgres@localhost/postgres" -c "CREATE DATABASE audit_poc OWNER db_admin;"
 
@@ -41,7 +41,7 @@ psql "postgresql://postgres:postgres@localhost/postgres" -c "CREATE DATABASE aud
 psql "postgresql://db_admin:db_admin_pass@localhost/audit_poc" -v ON_ERROR_STOP=1 -f sql/01_schema_audit.sql
 psql "postgresql://db_admin:db_admin_pass@localhost/audit_poc" -v ON_ERROR_STOP=1 -f sql/02_schema_business.sql
 
-# 4. Seed data (~5-8 GB, chạy nền)
+# 4. Seed data (~5-8 GB, runs in the background)
 psql "postgresql://db_admin:db_admin_pass@localhost/audit_poc" -v ON_ERROR_STOP=1 -f sql/03_seed_data.sql
 
 # 5. Audit function + triggers
@@ -53,7 +53,7 @@ psql "postgresql://db_admin:db_admin_pass@localhost/audit_poc" -v ON_ERROR_STOP=
 # 7. (Optional) Hash chain
 psql "postgresql://db_admin:db_admin_pass@localhost/audit_poc" -v ON_ERROR_STOP=1 -f sql/06_hash_chain.sql
 
-# 8. (Optional) DDL Audit - Audit các thay đổi schema (requires superuser — event trigger creation)
+# 8. (Optional) DDL Audit - audit schema changes (requires superuser — event trigger creation)
 psql "postgresql://postgres:postgres@localhost/audit_poc" -v ON_ERROR_STOP=1 -f sql/09_audit_ddl.sql
 
 # 9. Indexes
@@ -67,31 +67,31 @@ bash bench/run_baseline.sh
 bash bench/run_proposed.sh
 ```
 
-## Tính năng mới (Recent Enhancements)
+## Recent Enhancements
 
 ### 📊 Performance Monitoring
-- **pg_stat_statements**: Tự động bật trong benchmark để theo dõi hiệu năng
-- **analyze_performance.sh**: Phân tích truy vấn chậm, tần suất gọi, và tác động của audit trigger
-- **monitor.sh**: Real-time monitoring trong khi chạy benchmark (kết nối, TPS, WAL, cache hit ratio)
+- **pg_stat_statements**: Automatically enabled during benchmarks to track performance
+- **analyze_performance.sh**: Analyzes slow queries, call frequency, and audit trigger impact
+- **monitor.sh**: Real-time monitoring during benchmark runs (connections, TPS, WAL, cache hit ratio)
 
 ### 🔍 DDL Audit Support
-- **sql/09_audit_ddl.sql**: Event trigger ghi lại các thay đổi schema (CREATE, ALTER, DROP)
-- Lưu trữ trong bảng `audit_ddl_logs` với thông tin người dùng và câu lệnh SQL
+- **sql/09_audit_ddl.sql**: Event trigger that records schema changes (CREATE, ALTER, DROP)
+- Stored in the `audit_ddl_logs` table with user information and the SQL statement
 
 ### 🐳 Docker Support
-- **docker-compose.yml**: Khởi chạy PostgreSQL 16 với pg_stat_statements sẵn sàng
-- **Adminer**: Web interface quản lý database tại http://localhost:8080
-- Cấu hình qua file `.env` (copy từ `.env.example`)
+- **docker-compose.yml**: Starts PostgreSQL 16 with pg_stat_statements ready to use
+- **Adminer**: Web interface for managing the database at http://localhost:8080
+- Configure via the `.env` file (copy from `.env.example`)
 
 ### 🗂️ Partition Management
-- **scripts/manage_partitions.sh**: Quản lý partition tự động
-  - `create`: Tạo partition cho 3 tháng tới
-  - `drop_old`: Xóa partition cũ (mặc định > 6 tháng)
-  - `list`: Liệt kê tất cả partition và kích thước
+- **scripts/manage_partitions.sh**: Automatic partition management
+  - `create`: Create partitions for the next 3 months
+  - `drop_old`: Drop old partitions (default: older than 6 months)
+  - `list`: List all partitions and their sizes
 
 ### 📖 Enhanced Documentation
-- **docs/GETTING_STARTED.md**: Hướng dẫn chi tiết từng bước với Docker và local setup
-- Tích hợp performance monitoring và DDL audit vào workflow
+- **docs/GETTING_STARTED.md**: Step-by-step guide for Docker and local setup
+- Performance monitoring and DDL audit are integrated into the workflow
 
 ## Reset
 
@@ -99,9 +99,9 @@ bash bench/run_proposed.sh
 psql "postgresql://postgres:postgres@localhost/postgres" -f sql/99_cleanup.sql
 ```
 
-## Tài liệu
+## Documentation
 
-- `6-baocao.md` — Khung báo cáo nghiên cứu
-- `7-huongdan-xay-dung-source.md` — Hướng dẫn kỹ thuật chi tiết
-- `8-ke-hoach-xay-dung.md` — Kế hoạch phase-by-phase
-- `docs/results-summary.md` — Kết quả thực nghiệm (fill sau khi chạy bench)
+- `6-baocao.md` — Research report outline
+- `7-huongdan-xay-dung-source.md` — Detailed technical guide
+- `8-ke-hoach-xay-dung.md` — Phase-by-phase implementation plan
+- `docs/results-summary.md` — Experimental results summary (fill after running the benchmark)
